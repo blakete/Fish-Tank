@@ -6,8 +6,8 @@ from random import randint
 from cell import Cell
 from food import Food
 
-screen_size = 100
-num_foods = 2
+screen_size = 200
+num_foods = 4
 num_cells = 1
 
 window = Tk()
@@ -30,18 +30,18 @@ def is_collision(a, b):
 # create cells
 cells = []
 for i in range(0, num_cells):
-    x,y = 10, 10# generate_cell_coordinate(10)
+    x,y = 50, 50# generate_cell_coordinate(10)
     cells.append(Cell(canvas, x, y))
 
 # create foods 
 foods = []
-x,y = 90,50
-foods.append(Food(canvas, x, y))
-x,y = 90,60
-foods.append(Food(canvas, x, y))
-# for i in range(0, num_foods):
-#     x,y = 50,100# generate_cell_coordinate(10)
-#     foods.append(Food(canvas, x, y))
+# x,y = 90,50
+# foods.append(Food(canvas, x, y))
+# x,y = 90,60
+# foods.append(Food(canvas, x, y))
+for i in range(0, num_foods):
+    x,y = generate_cell_coordinate(10)
+    foods.append(Food(canvas, x, y))
 
 
 def distance_point_to_line(food_coords, line_coords):
@@ -67,10 +67,10 @@ def calculate_cell_food_vision(cell_coords, food_coords):
 
 
 def move():
-    print("---Cell Status Report---")
-    print("id\tconsumed\tfov")
-    for i, cell in enumerate(cells):
-        print(f"{i}\t{cell.consumed}\t{cell.fov}")
+    # print("---Cell Status Report---")
+    # print("id\tconsumed\tfov")
+    # for i, cell in enumerate(cells):
+    #     print(f"{i}\t{cell.consumed}\t{cell.fov}")
 
     # check for collisions between cells and food
     # TODO randomize the order of cell updates for easy race condition solution
@@ -118,7 +118,7 @@ def move():
 
     # move cells based on fov
     for cell in cells:
-        cell.advance(canvas)
+        cell.advance(canvas, screen_size, screen_size)
 
 
     # delete stale foods
