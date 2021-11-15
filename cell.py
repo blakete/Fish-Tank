@@ -4,7 +4,7 @@ from six import byte2int
 import tensorflow as tf
 
 class Cell:
-    def __init__(self, canvas, x, y, r=10, color="blue", species=0, vision_distance=40):
+    def __init__(self, canvas, x, y, r=10, color="blue", species=0, vision_distance=20):
         self.x = x
         self.y = y
         self.r = r
@@ -17,16 +17,20 @@ class Cell:
         self.vertical_eye = canvas.create_line(x, y-vision_distance, x, y+vision_distance)
         self.consumed = 0 # num foods eatin
         self.fov = np.asarray([0,0,0,0])
-        initializer = tf.random_normal_initializer(mean=0, stddev=2.)
-        k=3
-        self.W1 = tf.Variable(initializer(shape=[4, 5], dtype=tf.float32))
+        initializer = tf.random_normal_initializer(mean=0, stddev=1, seed=None)
+        initializer2 = tf.random_normal_initializer(mean=0, stddev=2, seed=None)
+        zeros_initializer = tf.zeros_initializer()
+        self.R1 = tf.Variable(zeros_initializer(shape=[1,5]))
+        self.W1 = tf.Variable(initializer(shape=[4+5, 5], dtype=tf.float32))
         self.W2 = tf.Variable(initializer(shape=[5, 2], dtype=tf.float32))
         self.b1 = tf.Variable(initializer(shape=[5], dtype=tf.float32))
         self.b2 = tf.Variable(initializer(shape=[2], dtype=tf.float32))
     
     def multilayer_perceptron(self, x):
-        l0 = np.expand_dims(x.astype('float32'), axis=0)
+        x = np.expand_dims(x.astype('float32'), axis=0)
+        l0 = tf.concat([x, self.R1], axis=1)
         l1 = tf.nn.sigmoid(tf.matmul(l0, self.W1) + self.b1)
+        self.R1 = l1
         l2 = tf.matmul(l1, self.W2) + self.b2
         return l2
 
@@ -35,12 +39,9 @@ class Cell:
 
     def calc_movement(self):
         # 1x4 --> 4x6 --> 6x2
-        print("---Calculating Movement---")
         print(f"fov: {self.fov}")
         nn_output = self.multilayer_perceptron(self.fov)
         return nn_output[0]
-
-
 
     def advance(self, canvas, w, h):
         # TODO calculate movement vector with fov
@@ -54,19 +55,17 @@ class Cell:
             y_vel = -1
         else: 
             y_vel = 1
-        print(f"cell move vector: ({x_vel}, {y_vel})")
+        print(f"move vector: ({x_vel}, {y_vel})")
         # x_vel, y_vel = 0, 1# self.calculate_vector()
 
         # make sure cell not moving outside canvas
         future_x = self.x + x_vel
         if (future_x < self.r or future_x > w - self.r):
-            print("hit x boundry")
             x_vel = 0
         else:
             self.x = future_x
         future_y = self.y + y_vel
         if (future_y < self.r or future_y > h - self.r):
-            print("hit y boundry")
             y_vel = 0
         else:
             self.y = future_y
@@ -90,3 +89,6 @@ class Cell:
     def get_coords(self):
         return self.x, self.y
         
+
+    # TODO save cell neural network weights to file
+    # TODO save cell death state, fitness, nn weights

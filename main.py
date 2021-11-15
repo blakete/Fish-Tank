@@ -8,7 +8,7 @@ from food import Food
 
 screen_size = 200
 num_foods = 4
-num_cells = 1
+num_cells = 2
 
 window = Tk()
 window.title("Fish Tank")
