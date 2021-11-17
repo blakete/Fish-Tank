@@ -26,6 +26,13 @@ class Cell:
         self.b1 = tf.Variable(initializer(shape=[5], dtype=tf.float32))
         self.b2 = tf.Variable(initializer(shape=[2], dtype=tf.float32))
     
+
+    def set_nn_weights(self, weights):
+        self.R1, self.W1, self.W2, self.b1, self.b2 = weights
+    
+    def get_nn_weights(self):
+        return self.R1, self.W1, self.W2, self.b1, self.b2
+
     def multilayer_perceptron(self, x):
         x = np.expand_dims(x.astype('float32'), axis=0)
         l0 = tf.concat([x, self.R1], axis=1)
@@ -39,14 +46,14 @@ class Cell:
 
     def calc_movement(self):
         # 1x4 --> 4x6 --> 6x2
-        print(f"fov: {self.fov}")
+        # print(f"fov: {self.fov}")
         nn_output = self.multilayer_perceptron(self.fov)
         return nn_output[0]
 
     def advance(self, canvas, w, h):
         # TODO calculate movement vector with fov
         move_vector = self.calc_movement()
-        print(f"nn output: {move_vector}")
+        # print(f"nn output: {move_vector}")
         if (move_vector[0] < 0):
             x_vel = -1
         else:
@@ -55,7 +62,7 @@ class Cell:
             y_vel = -1
         else: 
             y_vel = 1
-        print(f"move vector: ({x_vel}, {y_vel})")
+        # print(f"move vector: ({x_vel}, {y_vel})")
         # x_vel, y_vel = 0, 1# self.calculate_vector()
 
         # make sure cell not moving outside canvas
@@ -77,7 +84,9 @@ class Cell:
         canvas.coords(self.vertical_eye, self.x, self.y-self.vision_distance, self.x, self.y+self.vision_distance)
 
     def eat(self, food):
-        self.consumed += food.points
+        self.consumed += 1
+        print(f"Cell consumed {self.consumed}")
+        
 
     def get_eye_coords(self, canvas, eye):
         if eye == "h":
@@ -88,7 +97,11 @@ class Cell:
 
     def get_coords(self):
         return self.x, self.y
-        
+    
+    def self_destruct(self, canvas):
+        canvas.delete(self.circle)
+        canvas.delete(self.horizontal_eye)
+        canvas.delete(self.vertical_eye)
 
     # TODO save cell neural network weights to file
     # TODO save cell death state, fitness, nn weights

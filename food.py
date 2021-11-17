@@ -1,7 +1,7 @@
 from random import randint 
 
 class Food:
-    def __init__(self, canvas, x, y, r=10, color="green", points=75, decay=1):
+    def __init__(self, canvas, x, y, r=10, color="green", points=400, decay=1):
         self.x = x
         self.y = y
         self.r = r
