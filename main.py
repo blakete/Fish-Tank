@@ -12,6 +12,7 @@ num_cells = 10
 passthrough_rate = 0.5
 
 timesteps = 0
+epoch = 0
 
 window = Tk()
 window.title("Fish Tank")
@@ -104,19 +105,54 @@ def repopulate():
 def move():
     global cells
     global foods
+    global epoch
     urmom.append(1)
-    if len(urmom) % 200 == 0:
-        print(f"Timestep: {len(urmom)}")
-    if len(urmom) % 1000 == 0:
-        print("============================= Repopulating =============================")
-        # purge previous cells from canvas
+    # if len(urmom) % 200 == 0:
+    #     print(f"Timestep: {len(urmom)}")
+    if len(urmom) % 1200 == 0:
+        epoch += 1
+        print(f"---------------- Epoch {epoch} ------------------")
+        avg_fitnesses = []
+        lifetimes = []
         for cell in cells:
-            cell.self_destruct(canvas)
-        for food in foods:
-            food.self_destruct(canvas)
-        repopulate()
-        print(f"Timestep: {len(urmom)}")
-        print(f"Total population: {len(cells)}")
+            new_x, new_y = generate_cell_coordinate(10)
+            avg_fitness, lifelength = cell.end_epoch(canvas, new_x, new_y)
+            avg_fitnesses.append(avg_fitness)
+            lifetimes.append(lifelength)
+        # arg sort cells by their avg fitness
+        sorted_idxs = np.argsort(np.asarray(avg_fitnesses))
+        print("---------Cell Report - Pre Reset ---------")
+        for idx in sorted_idxs:
+            print(f"Cell {idx}, life length: {lifetimes[idx]}, fitness: {avg_fitnesses[idx]}, fitness_history: {cells[idx].fitness_history}")
+        
+        for reset_idx in sorted_idxs[:int(num_cells*passthrough_rate)]:
+            cells[reset_idx].reset()
+        
+        print("---------Cell Report - Post Reset ---------")
+        for idx in sorted_idxs:
+            print(f"Cell {idx}, life length: {len(cells[idx].fitness_history)},  fitness: {cells[idx].avg_fitness()}, fitness_history: {cells[idx].fitness_history}")
+
+        # append cell's current fitness to their history of fitness
+        # calculate each cell average fitness
+        # rank cells by their average fitness
+        # keep top 50% of cells
+        # reuse the previous cell objects by resetting them
+            # re-randomize their neural weights
+            # reset their fitness history to blank []
+            # set their current fitness to 0
+
+
+        # print("============================= Repopulating =============================")
+        # # purge previous cells from canvas
+        # for cell in cells:
+        #     cell.self_destruct(canvas)
+        # for food in foods:
+        #     food.self_destruct(canvas)
+        # repopulate()
+        # print(f"Timestep: {len(urmom)}")
+        # print(f"Total population: {len(cells)}")
+
+
 
     # print("---Cell Status Report---")
     # print("id\tconsumed\tfov")

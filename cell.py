@@ -10,15 +10,22 @@ class Cell:
         self.r = r
         self.color = color
         self.species = species
-        self.circle = canvas.create_oval(x-r, y-r, x+r, y+r, fill=color)
-        # create receptive field lines
         self.vision_distance = vision_distance
-        self.horizontal_eye = canvas.create_line(x-vision_distance, y, x+vision_distance, y)
-        self.vertical_eye = canvas.create_line(x, y-vision_distance, x, y+vision_distance)
-        self.consumed = 0 # num foods eatin
+        self.init_body(canvas)
+        self.fitness = 0 # num foods eatin this lifetime
+        self.fitness_history = [] 
+        self.init_brain()
+        
+    def init_body(self, canvas):
+        self.circle = canvas.create_oval(self.x-self.r, self.y-self.r, self.x+self.r, self.y+self.r, fill=self.color)
+        # create receptive field lines
+        self.horizontal_eye = canvas.create_line(self.x-self.vision_distance, self.y, self.x+self.vision_distance, self.y)
+        self.vertical_eye = canvas.create_line(self.x, self.y-self.vision_distance, self.x, self.y+self.vision_distance)
+
+    def init_brain(self):
         self.fov = np.asarray([0,0,0,0])
         initializer = tf.random_normal_initializer(mean=0, stddev=1, seed=None)
-        initializer2 = tf.random_normal_initializer(mean=0, stddev=2, seed=None)
+        # initializer2 = tf.random_normal_initializer(mean=0, stddev=2, seed=None)
         zeros_initializer = tf.zeros_initializer()
         self.R1 = tf.Variable(zeros_initializer(shape=[1,5]))
         self.W1 = tf.Variable(initializer(shape=[4+5, 5], dtype=tf.float32))
@@ -26,7 +33,6 @@ class Cell:
         self.b1 = tf.Variable(initializer(shape=[5], dtype=tf.float32))
         self.b2 = tf.Variable(initializer(shape=[2], dtype=tf.float32))
     
-
     def set_nn_weights(self, weights):
         self.R1, self.W1, self.W2, self.b1, self.b2 = weights
     
@@ -84,8 +90,8 @@ class Cell:
         canvas.coords(self.vertical_eye, self.x, self.y-self.vision_distance, self.x, self.y+self.vision_distance)
 
     def eat(self, food):
-        self.consumed += 1
-        print(f"Cell consumed {self.consumed}")
+        self.fitness += 1
+        # print(f"Cell consumed {self.fitness}")
         
 
     def get_eye_coords(self, canvas, eye):
@@ -105,3 +111,32 @@ class Cell:
 
     # TODO save cell neural network weights to file
     # TODO save cell death state, fitness, nn weights
+
+    def end_epoch(self, canvas, new_x, new_y):
+        '''
+        Returns cell average fitness and number of generations it has been alive
+        '''
+        # append cell's current fitness to their history of fitness
+        # print(f"Cell fitness: {self.fitness}")
+        self.fitness_history.append(self.fitness)
+        self.fitness = 0
+        # calculate each cell average fitness
+        avg_fitness = self.avg_fitness()
+        self.self_destruct(canvas)
+        self.x = new_x
+        self.y = new_y
+        self.init_body(canvas)
+        return avg_fitness, len(self.fitness_history)
+
+    def reset(self):
+        # re-randomize their neural weights
+        # reset their fitness history to blank []
+        # set their current fitness to 0
+        self.fitness = 0
+        self.fitness_history = []
+        self.init_brain()
+        
+    def avg_fitness(self):
+        if len(self.fitness_history) < 1:
+            return self.fitness
+        return sum(self.fitness_history)/len(self.fitness_history)
