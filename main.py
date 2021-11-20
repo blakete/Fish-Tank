@@ -7,7 +7,7 @@ from cell import Cell
 from food import Food
 
 screen_size = 700
-num_foods = 10
+num_foods = 15
 num_cells = 10
 passthrough_rate = 0.5
 
@@ -27,11 +27,7 @@ def generate_cell_coordinate(r):
     '''
     return randint(0+r, screen_size-r), randint(0+r, screen_size-r)
 
-# create cells
 cells = []
-for i in range(0, num_cells):
-    x,y = generate_cell_coordinate(10)
-    cells.append(Cell(canvas, x, y))
 
 # create foods 
 foods = []
@@ -39,9 +35,6 @@ foods = []
 # foods.append(Food(canvas, x, y))
 # x,y = 90,60
 # foods.append(Food(canvas, x, y))
-for i in range(0, num_foods):
-    x,y = generate_cell_coordinate(10)
-    foods.append(Food(canvas, x, y))
 
 urmom = []
 
@@ -110,28 +103,50 @@ def move():
     # if len(urmom) % 200 == 0:
     #     print(f"Timestep: {len(urmom)}")
     if len(urmom) % 1200 == 0:
-        epoch += 1
+        # if first generation, create the cells
         print(f"---------------- Epoch {epoch} ------------------")
-        avg_fitnesses = []
-        lifetimes = []
-        for cell in cells:
-            new_x, new_y = generate_cell_coordinate(10)
-            avg_fitness, lifelength = cell.end_epoch(canvas, new_x, new_y)
-            avg_fitnesses.append(avg_fitness)
-            lifetimes.append(lifelength)
-        # arg sort cells by their avg fitness
-        sorted_idxs = np.argsort(np.asarray(avg_fitnesses))
-        print("---------Cell Report - Pre Reset ---------")
-        for idx in sorted_idxs:
-            print(f"Cell {idx}, life length: {lifetimes[idx]}, fitness: {avg_fitnesses[idx]}, fitness_history: {cells[idx].fitness_history}")
-        
-        for reset_idx in sorted_idxs[:int(num_cells*passthrough_rate)]:
-            cells[reset_idx].reset()
-        
-        print("---------Cell Report - Post Reset ---------")
-        for idx in sorted_idxs:
-            print(f"Cell {idx}, life length: {len(cells[idx].fitness_history)},  fitness: {cells[idx].avg_fitness()}, fitness_history: {cells[idx].fitness_history}")
-
+        if epoch == 0:
+            # create cells
+            for i in range(0, num_cells):
+                # x,y = generate_cell_coordinate(10)
+                x, y = int(screen_size/2), int(screen_size/2)
+                cells.append(Cell(canvas, x, y))
+            # create foods
+            for i in range(0, num_foods):
+                x,y = generate_cell_coordinate(10)
+                foods.append(Food(canvas, x, y))
+        else:
+            # recreate eaten foods
+            for i in range(num_cells-len(foods)):
+                x,y = generate_cell_coordinate(10)
+                foods.append(Food(canvas, x, y))
+            # reset foods
+            for food in foods:
+                new_x, new_y = generate_cell_coordinate(10)
+                food.end_epoch(canvas, new_x, new_y)
+            # reset cells for next generation
+            avg_fitnesses = []
+            lifetimes = []
+            for cell in cells:
+                # new_x, new_y = generate_cell_coordinate(10)
+                new_x, new_y = int(screen_size/2), int(screen_size/2)
+                avg_fitness, lifelength = cell.end_epoch(canvas, new_x, new_y)
+                avg_fitnesses.append(avg_fitness)
+                lifetimes.append(lifelength)
+            # arg sort cells by their avg fitness
+            sorted_idxs = np.argsort(np.asarray(avg_fitnesses))
+            print("---------Cell Report - Pre Reset ---------")
+            for idx in sorted_idxs:
+                print(f"Cell {idx}, life length: {lifetimes[idx]}, fitness: {avg_fitnesses[idx]}, fitness_history: {cells[idx].fitness_history}")
+            
+            for reset_idx in sorted_idxs[:int(num_cells*passthrough_rate)]:
+                cells[reset_idx].reset()
+            
+            print("---------Cell Report - Post Reset ---------")
+            for idx in sorted_idxs:
+                print(f"Cell {idx}, life length: {len(cells[idx].fitness_history)},  fitness: {cells[idx].avg_fitness()}, fitness_history: {cells[idx].fitness_history}")
+        print(f"Num foods: {len(foods)}")
+        epoch += 1
         # append cell's current fitness to their history of fitness
         # calculate each cell average fitness
         # rank cells by their average fitness
@@ -171,13 +186,6 @@ def move():
         for i in sorted(purge_indexes, reverse=True):
             foods[i].self_destruct(canvas)
             del foods[i]
-
-    # add new foods if needed
-    # TODO spawn foods not in collision with cells
-    foods_to_create = num_foods - len(foods)
-    if foods_to_create > 0:
-        x,y = generate_cell_coordinate(10)
-        foods.append(Food(canvas, x, y))
     
 
     # TODO calculate cell receptive field vector
