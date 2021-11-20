@@ -28,15 +28,8 @@ def generate_cell_coordinate(r):
     return randint(0+r, screen_size-r), randint(0+r, screen_size-r)
 
 cells = []
-
-# create foods 
 foods = []
-# x,y = 90,50
-# foods.append(Food(canvas, x, y))
-# x,y = 90,60
-# foods.append(Food(canvas, x, y))
-
-urmom = []
+time_steps = []
 
 
 
@@ -99,10 +92,8 @@ def move():
     global cells
     global foods
     global epoch
-    urmom.append(1)
-    # if len(urmom) % 200 == 0:
-    #     print(f"Timestep: {len(urmom)}")
-    if len(urmom) % 1200 == 0:
+    time_steps.append(1)
+    if len(time_steps) % 1200 == 0:
         # if first generation, create the cells
         print(f"---------------- Epoch {epoch} ------------------")
         if epoch == 0:
@@ -147,35 +138,8 @@ def move():
                 print(f"Cell {idx}, life length: {len(cells[idx].fitness_history)},  fitness: {cells[idx].avg_fitness()}, fitness_history: {cells[idx].fitness_history}")
         print(f"Num foods: {len(foods)}")
         epoch += 1
-        # append cell's current fitness to their history of fitness
-        # calculate each cell average fitness
-        # rank cells by their average fitness
-        # keep top 50% of cells
-        # reuse the previous cell objects by resetting them
-            # re-randomize their neural weights
-            # reset their fitness history to blank []
-            # set their current fitness to 0
-
-
-        # print("============================= Repopulating =============================")
-        # # purge previous cells from canvas
-        # for cell in cells:
-        #     cell.self_destruct(canvas)
-        # for food in foods:
-        #     food.self_destruct(canvas)
-        # repopulate()
-        # print(f"Timestep: {len(urmom)}")
-        # print(f"Total population: {len(cells)}")
-
-
-
-    # print("---Cell Status Report---")
-    # print("id\tconsumed\tfov")
-    # for i, cell in enumerate(cells):
-    #     print(f"{i}\t{cell.consumed}\t{cell.fov}")
 
     # check for collisions between cells and food
-    # TODO randomize the order of cell updates for easy race condition solution
     for cell in cells:
         purge_indexes = []
         for i in range(len(foods)): 
@@ -187,8 +151,7 @@ def move():
             foods[i].self_destruct(canvas)
             del foods[i]
     
-
-    # TODO calculate cell receptive field vector
+    # calculate cell fov vector
     # [N, S, E, W]
     for cell in cells:
         fov = [0,0,0,0]
@@ -215,7 +178,6 @@ def move():
     for cell in cells:
         cell.advance(canvas, screen_size, screen_size)
 
-
     # delete stale foods
     purge_indexes = []
     for i in range(len(foods)):
@@ -226,7 +188,6 @@ def move():
         del foods[i]
 
     window.after(5, move)
-
 
 move()
 window.mainloop()
