@@ -7,9 +7,9 @@ from cell import Cell
 from food import Food
 
 frame_rate = 5
-screen_size = 500
-num_foods = 10
-num_cells = 10
+screen_size = 200
+num_foods = 1
+num_cells = 1
 passthrough_rate = 0.5
 
 cell_vision_distance = 75
@@ -97,8 +97,7 @@ def move():
     global epoch
     global time_steps
     global frame_rate
-    time_steps += 1
-    if time_steps == 1 or time_steps % epoch_timesteps == 0:
+    if time_steps == 0 or time_steps % epoch_timesteps == 0:
         # if first generation, create the cells
         print(f"---------------- Epoch {epoch} ------------------")
         if epoch == 0:
@@ -112,14 +111,14 @@ def move():
                 x,y = generate_cell_coordinate(10)
                 foods.append(Food(canvas, x, y))
         else:
-            # recreate eaten foods
-            for i in range(num_cells-len(foods)):
-                x,y = generate_cell_coordinate(10)
-                foods.append(Food(canvas, x, y))
             # reset foods
             for food in foods:
                 new_x, new_y = generate_cell_coordinate(10)
                 food.end_epoch(canvas, new_x, new_y)
+            # recreate eaten foods
+            for i in range(num_cells-len(foods)):
+                x,y = generate_cell_coordinate(10)
+                foods.append(Food(canvas, x, y))
             # reset cells for next generation
             avg_fitnesses = []
             lifetimes = []
@@ -210,6 +209,7 @@ def move():
         foods[i].self_destruct(canvas)
         del foods[i]
 
+    time_steps += 1
     window.after(frame_rate, move)
 
 print("Starting movement...")

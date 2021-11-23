@@ -61,7 +61,7 @@ class Cell:
         # TODO calculate movement vector with fov
         move_vector = self.calc_movement()
         # print(f"nn output: {move_vector}")
-        
+
         if abs(move_vector[0]) <= 1:
             x_vel = 0
         elif (move_vector[0] < -1):
@@ -130,6 +130,8 @@ class Cell:
         # calculate each cell average fitness
         avg_fitness = self.avg_fitness()
         self.self_destruct(canvas)
+        zeros_initializer = tf.zeros_initializer()
+        self.R1 = tf.Variable(zeros_initializer(shape=[1,16]))
         self.x = new_x
         self.y = new_y
         self.init_body(canvas)
