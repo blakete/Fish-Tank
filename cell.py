@@ -4,7 +4,7 @@ from six import byte2int
 import tensorflow as tf
 
 class Cell:
-    def __init__(self, canvas, x, y, r=10, color="blue", species=0, vision_distance=20):
+    def __init__(self, canvas, x, y, r=10, color="blue", species=0, vision_distance=75):
         self.x = x
         self.y = y
         self.r = r
@@ -23,14 +23,14 @@ class Cell:
         self.vertical_eye = canvas.create_line(self.x, self.y-self.vision_distance, self.x, self.y+self.vision_distance)
 
     def init_brain(self):
-        self.fov = np.asarray([0,0,0,0])
+        self.fov = np.asarray([0,0,0,0,0,0,0,0])
         initializer = tf.random_normal_initializer(mean=0, stddev=1, seed=None)
         # initializer2 = tf.random_normal_initializer(mean=0, stddev=2, seed=None)
         zeros_initializer = tf.zeros_initializer()
-        self.R1 = tf.Variable(zeros_initializer(shape=[1,5]))
-        self.W1 = tf.Variable(initializer(shape=[4+5, 5], dtype=tf.float32))
-        self.W2 = tf.Variable(initializer(shape=[5, 2], dtype=tf.float32))
-        self.b1 = tf.Variable(initializer(shape=[5], dtype=tf.float32))
+        self.W1 = tf.Variable(initializer(shape=[len(self.fov)+16, 16], dtype=tf.float32))
+        self.W2 = tf.Variable(initializer(shape=[16, 2], dtype=tf.float32))
+        self.R1 = tf.Variable(zeros_initializer(shape=[1,16]))
+        self.b1 = tf.Variable(initializer(shape=[16], dtype=tf.float32))
         self.b2 = tf.Variable(initializer(shape=[2], dtype=tf.float32))
     
     def set_nn_weights(self, weights):
@@ -41,6 +41,7 @@ class Cell:
 
     def multilayer_perceptron(self, x):
         x = np.expand_dims(x.astype('float32'), axis=0)
+        # print(f"recurrent feedback: {np.sum(self.R1)}")
         l0 = tf.concat([x, self.R1], axis=1)
         l1 = tf.nn.sigmoid(tf.matmul(l0, self.W1) + self.b1)
         self.R1 = l1
@@ -60,13 +61,19 @@ class Cell:
         # TODO calculate movement vector with fov
         move_vector = self.calc_movement()
         # print(f"nn output: {move_vector}")
-        if (move_vector[0] < 0):
-            x_vel = -1
+        
+        if abs(move_vector[0]) <= 1:
+            x_vel = 0
+        elif (move_vector[0] < -1):
+            x_vel = -1 
         else:
             x_vel = 1
-        if (move_vector[1] < 0):
+
+        if abs(move_vector[1]) <= 1:
+            y_vel = 0
+        elif move_vector[1] < -1:
             y_vel = -1
-        else: 
+        else:
             y_vel = 1
         # print(f"move vector: ({x_vel}, {y_vel})")
         # x_vel, y_vel = 0, 1# self.calculate_vector()

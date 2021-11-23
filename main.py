@@ -6,12 +6,15 @@ from random import randint
 from cell import Cell
 from food import Food
 
-screen_size = 700
-num_foods = 15
+frame_rate = 5
+screen_size = 500
+num_foods = 10
 num_cells = 10
 passthrough_rate = 0.5
 
+cell_vision_distance = 75
 timesteps = 0
+epoch_timesteps = 700
 epoch = 0
 
 window = Tk()
@@ -29,14 +32,15 @@ def generate_cell_coordinate(r):
 
 cells = []
 foods = []
-time_steps = []
+time_steps = 0
 
 
 
 def is_collision(a, b):
     dist = math.sqrt(math.pow(a.x - b.x, 2) + math.pow(a.y - b.y, 2))
     return dist < (a.r + b.r)
-
+def distance_point_to_point(p1, p2):
+    return math.sqrt(math.pow((p2[0]-p1[0]), 2) + math.pow((p2[1]-p1[1]), 2))
 
 def distance_point_to_line(food_coords, line_coords):
     # by = ax + c, b = 1
@@ -86,14 +90,15 @@ def repopulate():
     for i in range(0, num_foods):
         x,y = generate_cell_coordinate(10)
         foods.append(Food(canvas, x, y))
-    
 
 def move():
     global cells
     global foods
     global epoch
-    time_steps.append(1)
-    if len(time_steps) % 1200 == 0:
+    global time_steps
+    global frame_rate
+    time_steps += 1
+    if time_steps == 1 or time_steps % epoch_timesteps == 0:
         # if first generation, create the cells
         print(f"---------------- Epoch {epoch} ------------------")
         if epoch == 0:
@@ -136,7 +141,6 @@ def move():
             print("---------Cell Report - Post Reset ---------")
             for idx in sorted_idxs:
                 print(f"Cell {idx}, life length: {len(cells[idx].fitness_history)},  fitness: {cells[idx].avg_fitness()}, fitness_history: {cells[idx].fitness_history}")
-        print(f"Num foods: {len(foods)}")
         epoch += 1
 
     # check for collisions between cells and food
@@ -155,24 +159,43 @@ def move():
     # [N, S, E, W]
     for cell in cells:
         fov = [0,0,0,0]
+        fov_walls = [0,0,0,0]
+        cell_point = cell.get_coords()
+        # calculate if cell sees walls
+        if cell_point[0] < cell_vision_distance:
+            fov_walls[3] = 1
+        elif cell_point[0] > screen_size - cell_vision_distance:
+            fov_walls[2] = 1
+        if cell_point[1] < cell_vision_distance:
+            fov_walls[0] = 1
+        elif cell_point[1] > screen_size - cell_vision_distance:
+            fov_walls[1] = 1
+        # calculate if cell sees foods
         for food in foods:
             food_point = food.get_coords()
-            cell_point = cell.get_coords()
-            h_eye_line = cell.get_eye_coords(canvas,"h")
+            hypotenuse = distance_point_to_point(cell_point, food_point)
+            
+            h_eye_line = cell.get_eye_coords(canvas, "h")
             h_eye_dist = distance_point_to_line(food_point, h_eye_line)
-            v_eye_line = cell.get_eye_coords(canvas,"v")
+            h_eye_prox = math.sqrt(math.pow(hypotenuse, 2) - math.pow(h_eye_dist, 2))
+
+            v_eye_line = cell.get_eye_coords(canvas, "v")
             v_eye_dist = distance_point_to_line(food_point, v_eye_line)
-            if (h_eye_dist < 10):
+            v_eye_prox = math.sqrt(math.pow(hypotenuse, 2) - math.pow(v_eye_dist, 2))
+
+            if (h_eye_dist < 10 and h_eye_prox < cell_vision_distance):
                 if cell_point[0] < food_point[0]:
                     fov[2] += 1
                 else:
                     fov[3] += 1
-            if (v_eye_dist < 10):
+            if (v_eye_dist < 10 and v_eye_prox < cell_vision_distance):
                 if cell_point[1] > food_point[1]:
                     fov[0] += 1
                 else:
                     fov[1] += 1
+        fov.extend(fov_walls)
         cell.fov = np.asarray(fov)
+        # print(f"cell fov: {cell.fov}")
 
     # move cells based on fov
     for cell in cells:
@@ -187,7 +210,8 @@ def move():
         foods[i].self_destruct(canvas)
         del foods[i]
 
-    window.after(5, move)
+    window.after(frame_rate, move)
 
+print("Starting movement...")
 move()
 window.mainloop()
