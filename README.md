@@ -2,11 +2,11 @@
 Evolutionary cell simulation.<br><br>
 
 ## Cell Intelligence
-1. Cell calculates fields of view (FOV)
-  1. Cell can "see" foods and walls North, South, East, West within 75 pixels.
-  2. This FOV is represented as a (1,8) vector. Indices 0-3 represent and 4-7 represent N,S,E,W for foods and walls respectively.
-2. Cell FOV propogated through cell neural network
-3. Neural network output (1,2) interpreted to control cell movement.
+* Cell calculates fields of view (FOV)
+  * Cell can "see" foods and walls North, South, East, West within 75 pixels.
+  * This FOV is represented as a (1,8) vector. Indices 0-3 represent and 4-7 represent N,S,E,W for foods and walls respectively.
+* Cell FOV propogated through cell neural network
+* Neural network output (1,2) interpreted to control cell movement.
   * |Output[0]| < 1 --> 0 pixel x-axis movement
   * Output[0] > 1 --> 1 pixel x-axis movement
   * Output[0] < -1 --> -1 pixel x-axis movement
