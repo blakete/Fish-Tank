@@ -8,23 +8,15 @@ class Cell:
         self.x = x
         self.y = y
         self.r = r
-        self.color = self.generate_hex_color()
+        self.color = color
         self.species = species
         self.vision_distance = vision_distance
         self.init_body(canvas)
         self.generation = 0
         self.fitness = 1 # num foods eatin this lifetime
-        self.constant_decay = 0.005
+        self.constant_decay = 0.003
         self.fitness_history = [] 
         self.init_brain()
-    
-    def generate_hex_color(self):
-        r, g, b = hex(randint(0,255)), hex(randint(0,255)), hex(randint(0,255))
-        r = r[-2:] if len(r) == 4 else f"0{r[-1:]}"
-        g = g[-2:] if len(g) == 4 else f"0{g[-1:]}"
-        b = b[-2:] if len(b) == 4 else f"0{b[-1:]}"
-        return f"#{r}{g}{b}"
-
         
     def init_body(self, canvas):
         self.circle = canvas.create_oval(self.x-self.r, self.y-self.r, self.x+self.r, self.y+self.r, fill=self.color)
@@ -43,11 +35,29 @@ class Cell:
         self.b1 = tf.Variable(initializer(shape=[16], dtype=tf.float32))
         self.b2 = tf.Variable(initializer(shape=[2], dtype=tf.float32))
     
+    def clear_brain_memory(self):
+        zeros_initializer = tf.zeros_initializer()
+        self.R1 = tf.Variable(zeros_initializer(shape=[1,16])) 
+
     def set_nn_weights(self, weights):
-        self.R1, self.W1, self.W2, self.b1, self.b2 = weights
+        self.W1, self.W2, self.b1, self.b2 = weights
     
     def get_nn_weights(self):
-        return self.R1, self.W1, self.W2, self.b1, self.b2
+        return (self.W1, self.W2, self.b1, self.b2)
+    
+    def mutate_weights(self, stddev):
+        initializer = tf.random_normal_initializer(mean=0, stddev=stddev, seed=None)
+        W1_mut = tf.Variable(initializer(shape=self.W1.shape, dtype=tf.float32))
+        W2_mut = tf.Variable(initializer(shape=self.W2.shape, dtype=tf.float32))
+        R1_mut = tf.Variable(initializer(shape=self.R1.shape, dtype=tf.float32))
+        b1_mut = tf.Variable(initializer(shape=self.b1.shape, dtype=tf.float32))
+        b2_mut = tf.Variable(initializer(shape=self.b2.shape, dtype=tf.float32))
+        self.W1 = self.W1 + W1_mut
+        self.W2 = self.W2 + W2_mut
+        self.R1 = self.R1 + R1_mut
+        self.b1 = self.b1 + b1_mut
+        self.b2 = self.b2 + b2_mut
+
 
     def multilayer_perceptron(self, x):
         x = np.expand_dims(x.astype('float32'), axis=0)
