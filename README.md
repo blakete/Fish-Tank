@@ -1,4 +1,4 @@
-# Fish-Tank
+# Fish Tank
 Digital fish tank for your living room. Watch them as they evolve to find food!<br>
 
 ## Cell Intelligence
