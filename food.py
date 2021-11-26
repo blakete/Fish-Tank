@@ -13,15 +13,6 @@ class Food:
     def init_body(self, canvas):
         self.circle = canvas.create_oval(self.x-self.r, self.y-self.r, self.x+self.r, self.y+self.r, fill=self.color)
 
-    def advance(self, canvas):
-        '''
-        Advances food by decay factor and returns true if still alive.
-        '''
-        self.points -= self.decay
-        if self.points <= 0:
-            return False
-        return True
-
     def self_destruct(self, canvas):
         canvas.delete(self.circle)
     

@@ -7,10 +7,10 @@ from cell import Cell
 from food import Food
 
 frame_rate = 5
-screen_size = 200
-num_foods = 1
-num_cells = 1
-passthrough_rate = 0.5
+screen_size = 600
+num_foods = 16
+num_cells = 4
+passthrough_rate = 1.0
 
 cell_vision_distance = 75
 timesteps = 0
@@ -35,10 +35,10 @@ foods = []
 time_steps = 0
 
 
-
 def is_collision(a, b):
     dist = math.sqrt(math.pow(a.x - b.x, 2) + math.pow(a.y - b.y, 2))
     return dist < (a.r + b.r)
+
 def distance_point_to_point(p1, p2):
     return math.sqrt(math.pow((p2[0]-p1[0]), 2) + math.pow((p2[1]-p1[1]), 2))
 
@@ -97,50 +97,52 @@ def move():
     global epoch
     global time_steps
     global frame_rate
-    if time_steps == 0 or time_steps % epoch_timesteps == 0:
-        # if first generation, create the cells
-        print(f"---------------- Epoch {epoch} ------------------")
-        if epoch == 0:
-            # create cells
-            for i in range(0, num_cells):
-                # x,y = generate_cell_coordinate(10)
-                x, y = int(screen_size/2), int(screen_size/2)
-                cells.append(Cell(canvas, x, y))
-            # create foods
-            for i in range(0, num_foods):
-                x,y = generate_cell_coordinate(10)
-                foods.append(Food(canvas, x, y))
-        else:
-            # reset foods
-            for food in foods:
-                new_x, new_y = generate_cell_coordinate(10)
-                food.end_epoch(canvas, new_x, new_y)
-            # recreate eaten foods
-            for i in range(num_cells-len(foods)):
-                x,y = generate_cell_coordinate(10)
-                foods.append(Food(canvas, x, y))
-            # reset cells for next generation
-            avg_fitnesses = []
-            lifetimes = []
-            for cell in cells:
-                # new_x, new_y = generate_cell_coordinate(10)
-                new_x, new_y = int(screen_size/2), int(screen_size/2)
-                avg_fitness, lifelength = cell.end_epoch(canvas, new_x, new_y)
-                avg_fitnesses.append(avg_fitness)
-                lifetimes.append(lifelength)
-            # arg sort cells by their avg fitness
-            sorted_idxs = np.argsort(np.asarray(avg_fitnesses))
-            print("---------Cell Report - Pre Reset ---------")
-            for idx in sorted_idxs:
-                print(f"Cell {idx}, life length: {lifetimes[idx]}, fitness: {avg_fitnesses[idx]}, fitness_history: {cells[idx].fitness_history}")
+    # if time_steps == 0 or time_steps % epoch_timesteps == 0:
+    #     # if first generation, create the cells
+    #     print(f"---------------- Epoch {epoch} ------------------")
+    #     if epoch == 0:
+    #         # create cells
+    #         for i in range(0, num_cells):
+    #             # x,y = generate_cell_coordinate(10)
+    #             x, y = int(screen_size/2), int(screen_size/2)
+    #             cells.append(Cell(canvas, x, y))
+    #         # create foods
+    #         for i in range(0, num_foods):
+    #             x,y = generate_cell_coordinate(10)
+    #             foods.append(Food(canvas, x, y))
+    #     else:
+    #         # reset foods
+    #         for food in foods:
+    #             new_x, new_y = generate_cell_coordinate(10)
+    #             food.end_epoch(canvas, new_x, new_y)
+    #         # recreate eaten foods
+    #         for i in range(num_cells-len(foods)):
+    #             x,y = generate_cell_coordinate(10)
+    #             foods.append(Food(canvas, x, y))
+
+    #         # reset cells for next generation
+    #         avg_fitnesses = []
+    #         lifetimes = []
+    #         for cell in cells:
+    #             # new_x, new_y = generate_cell_coordinate(10)
+    #             new_x, new_y = int(screen_size/2), int(screen_size/2)
+    #             avg_fitness, lifelength = cell.end_epoch(canvas, new_x, new_y)
+    #             avg_fitnesses.append(avg_fitness)
+    #             lifetimes.append(lifelength)
             
-            for reset_idx in sorted_idxs[:int(num_cells*passthrough_rate)]:
-                cells[reset_idx].reset()
+    #         # arg sort cells by their avg fitness
+    #         sorted_idxs = np.argsort(np.asarray(avg_fitnesses))
+    #         print("---------Cell Report - Pre Reset ---------")
+    #         for idx in sorted_idxs:
+    #             print(f"Cell {idx}, life length: {lifetimes[idx]}, fitness: {avg_fitnesses[idx]}, fitness_history: {cells[idx].fitness_history}")
             
-            print("---------Cell Report - Post Reset ---------")
-            for idx in sorted_idxs:
-                print(f"Cell {idx}, life length: {len(cells[idx].fitness_history)},  fitness: {cells[idx].avg_fitness()}, fitness_history: {cells[idx].fitness_history}")
-        epoch += 1
+    #         for reset_idx in sorted_idxs[:int(num_cells*passthrough_rate)]:
+    #             cells[reset_idx].reset()
+            
+    #         print("---------Cell Report - Post Reset ---------")
+    #         for idx in sorted_idxs:
+    #             print(f"Cell {idx}, life length: {len(cells[idx].fitness_history)},  fitness: {cells[idx].avg_fitness()}, fitness_history: {cells[idx].fitness_history}")
+    #     epoch += 1
 
     # check for collisions between cells and food
     for cell in cells:
@@ -196,18 +198,20 @@ def move():
         cell.fov = np.asarray(fov)
         # print(f"cell fov: {cell.fov}")
 
-    # move cells based on fov
-    for cell in cells:
-        cell.advance(canvas, screen_size, screen_size)
-
-    # delete stale foods
-    purge_indexes = []
-    for i in range(len(foods)):
-        if not foods[i].advance(canvas):
-            purge_indexes.append(i)
-    for i in sorted(purge_indexes, reverse=True):
-        foods[i].self_destruct(canvas)
-        del foods[i]
+    # move cells based on fov, only keep cells with fitness above 0 to continue
+    cells = [x for x in cells if x.advance(canvas, screen_size, screen_size)]
+    
+    # create cells if not at minimum cells
+    if len(cells) < num_cells:
+        for i in range(0, num_cells-len(cells)):
+            x, y = int(screen_size/2), int(screen_size/2)
+            cells.append(Cell(canvas, x, y))
+    
+    # create foods if not at minimum foods
+    if len(foods) < num_foods:
+        for i in range(0, num_foods-len(foods)):
+            x,y = generate_cell_coordinate(10)
+            foods.append(Food(canvas, x, y))
 
     time_steps += 1
     window.after(frame_rate, move)

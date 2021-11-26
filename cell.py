@@ -8,13 +8,22 @@ class Cell:
         self.x = x
         self.y = y
         self.r = r
-        self.color = color
+        self.color = self.generate_hex_color()
         self.species = species
         self.vision_distance = vision_distance
         self.init_body(canvas)
-        self.fitness = 0 # num foods eatin this lifetime
+        self.fitness = 1 # num foods eatin this lifetime
+        self.constant_decay = 0.005
         self.fitness_history = [] 
         self.init_brain()
+    
+    def generate_hex_color(self):
+        r, g, b = hex(randint(0,255)), hex(randint(0,255)), hex(randint(0,255))
+        r = r[-2:] if len(r) == 4 else f"0{r[-1:]}"
+        g = g[-2:] if len(g) == 4 else f"0{g[-1:]}"
+        b = b[-2:] if len(b) == 4 else f"0{b[-1:]}"
+        return f"#{r}{g}{b}"
+
         
     def init_body(self, canvas):
         self.circle = canvas.create_oval(self.x-self.r, self.y-self.r, self.x+self.r, self.y+self.r, fill=self.color)
@@ -58,6 +67,13 @@ class Cell:
         return nn_output[0]
 
     def advance(self, canvas, w, h):
+        '''
+        Returns false if cell dies, true if cell continues
+        '''
+        self.fitness -= self.constant_decay
+        if self.fitness <= 0:
+            self.self_destruct(canvas)
+            return False
         # TODO calculate movement vector with fov
         move_vector = self.calc_movement()
         # print(f"nn output: {move_vector}")
@@ -95,6 +111,7 @@ class Cell:
         # move eyes
         canvas.coords(self.horizontal_eye, self.x-self.vision_distance, self.y, self.x+self.vision_distance, self.y)
         canvas.coords(self.vertical_eye, self.x, self.y-self.vision_distance, self.x, self.y+self.vision_distance)
+        return True
 
     def eat(self, food):
         self.fitness += 1
