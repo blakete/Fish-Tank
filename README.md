@@ -21,3 +21,6 @@ Digital fish tank for your living room. Watch them as they evolve to find food!<
 * After X time steps, the generation ends. 
 * The C cells are sorted by fitness score. TODO
 
+## References
+* https://www.youtube.com/watch?v=qv6UVOQ0F44&ab_channel=SethBling
+* 
