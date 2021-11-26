@@ -23,4 +23,4 @@ Digital fish tank for your living room. Watch them as they evolve to find food!<
 
 ## References
 * https://www.youtube.com/watch?v=qv6UVOQ0F44&ab_channel=SethBling
-* 
+* http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf
