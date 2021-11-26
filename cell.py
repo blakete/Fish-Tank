@@ -12,6 +12,7 @@ class Cell:
         self.species = species
         self.vision_distance = vision_distance
         self.init_body(canvas)
+        self.generation = 0
         self.fitness = 1 # num foods eatin this lifetime
         self.constant_decay = 0.005
         self.fitness_history = [] 
