@@ -1,5 +1,5 @@
 # Fish-Tank
-Evolutionary cell simulation.<br><br>
+Digital fish tank for your living room. Watch them as they evolve to find food!<br><br>
 
 ## Cell Intelligence
 * Cell calculates fields of view (FOV)
