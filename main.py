@@ -7,9 +7,9 @@ from cell import Cell
 from food import Food
 
 frame_rate = 1
-screen_size = 700
-num_foods = 16
-num_cells = 4
+screen_size = 800
+num_foods = 30
+num_cells = 10
 cell_vision_distance = 75
 timesteps = 0
 cell_fitness_reproduction_level = 2 # fitness must be this much for cell to clone itself
@@ -73,6 +73,9 @@ def move():
     global time_steps
     global frame_rate
 
+    if time_steps % 50 == 0:
+        print(f"Total cells: {len(cells)}")
+
     # check for collisions between cells and food
     # TODO check cell fitness and spawn new cell if at 
     clone_indices = [] # cells to clone because they ate a food
@@ -80,7 +83,7 @@ def move():
         purge_indexes = []
         for i in range(len(foods)): 
             if is_collision(cell, foods[i]):
-                cell.eat(foods[i])
+                # cell.eat(foods[i])
                 clone_indices.append(j)
                 purge_indexes.append(i)    
         # delete consumed foods
@@ -90,8 +93,7 @@ def move():
     
     # TODO create cell clones
     for i in clone_indices:
-        print(f"cloning {i}")
-        x, y = int(screen_size/2), int(screen_size/2)
+        # x, y = int(screen_size/2), int(screen_size/2)
         x, y = generate_cell_coordinate(100)
         parentCell = cells[i]
         childCell = Cell(canvas, x, y, color=parentCell.color)
@@ -99,7 +101,7 @@ def move():
         # initialize with parent 
         childCell.set_nn_weights(parentCell.get_nn_weights())
         # add slight mutation to child weights
-        childCell.mutate_weights(0.05)
+        childCell.mutate_weights(0.25)
         childCell.clear_brain_memory() # delete recurrent memory from parent
         cells.append(childCell)
 

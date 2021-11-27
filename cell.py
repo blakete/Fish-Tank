@@ -14,15 +14,17 @@ class Cell:
         self.init_body(canvas)
         self.generation = 0
         self.fitness = 1 # num foods eatin this lifetime
-        self.constant_decay = 0.003
+        self.constant_decay = 0.001
         self.fitness_history = [] 
         self.init_brain()
         
     def init_body(self, canvas):
-        self.circle = canvas.create_oval(self.x-self.r, self.y-self.r, self.x+self.r, self.y+self.r, fill=self.color)
         # create receptive field lines
         self.horizontal_eye = canvas.create_line(self.x-self.vision_distance, self.y, self.x+self.vision_distance, self.y)
         self.vertical_eye = canvas.create_line(self.x, self.y-self.vision_distance, self.x, self.y+self.vision_distance)
+        # create body
+        self.circle = canvas.create_oval(self.x-self.r, self.y-self.r, self.x+self.r, self.y+self.r, fill=self.color)
+        
 
     def init_brain(self):
         self.fov = np.asarray([0,0,0,0,0,0,0,0])
@@ -109,19 +111,24 @@ class Cell:
         future_x = self.x + x_vel
         if (future_x < self.r or future_x > w - self.r):
             x_vel = 0
+            self.self_destruct(canvas)
+            return False
         else:
             self.x = future_x
         future_y = self.y + y_vel
         if (future_y < self.r or future_y > h - self.r):
             y_vel = 0
+            self.self_destruct(canvas)
+            return False
         else:
             self.y = future_y
 
-        # move cell body
-        canvas.move(self.circle, x_vel, y_vel)
         # move eyes
         canvas.coords(self.horizontal_eye, self.x-self.vision_distance, self.y, self.x+self.vision_distance, self.y)
         canvas.coords(self.vertical_eye, self.x, self.y-self.vision_distance, self.x, self.y+self.vision_distance)
+        # move cell body
+        canvas.move(self.circle, x_vel, y_vel)
+        
         return True
 
     def eat(self, food):
