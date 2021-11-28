@@ -83,7 +83,7 @@ def move():
         purge_indexes = []
         for i in range(len(foods)): 
             if is_collision(cell, foods[i]):
-                # cell.eat(foods[i])
+                cell.eat(foods[i])
                 clone_indices.append(j)
                 purge_indexes.append(i)    
         # delete consumed foods

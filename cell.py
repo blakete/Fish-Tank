@@ -2,6 +2,7 @@ from random import randint
 import numpy as np
 from six import byte2int
 import tensorflow as tf
+from tkinter import *
 
 class Cell:
     def __init__(self, canvas, x, y, r=10, color="blue", species=0, vision_distance=75):
@@ -13,7 +14,8 @@ class Cell:
         self.vision_distance = vision_distance
         self.init_body(canvas)
         self.generation = 0
-        self.fitness = 1 # num foods eatin this lifetime
+        self.fitness = 0 # num foods eatin this lifetime
+        self.health = 1
         self.constant_decay = 0.001
         self.fitness_history = [] 
         self.init_brain()
@@ -24,7 +26,7 @@ class Cell:
         self.vertical_eye = canvas.create_line(self.x, self.y-self.vision_distance, self.x, self.y+self.vision_distance)
         # create body
         self.circle = canvas.create_oval(self.x-self.r, self.y-self.r, self.x+self.r, self.y+self.r, fill=self.color)
-        
+        self.stat_text = canvas.create_text(self.x, self.y-2*self.r, text='text')
 
     def init_brain(self):
         self.fov = np.asarray([0,0,0,0,0,0,0,0])
@@ -83,14 +85,14 @@ class Cell:
         '''
         Returns false if cell dies, true if cell continues
         '''
-        self.fitness -= self.constant_decay
-        if self.fitness <= 0:
+        self.fitness += 1
+        self.health -= self.constant_decay
+        if self.health <= 0:
             self.self_destruct(canvas)
             return False
-        # TODO calculate movement vector with fov
+        
+        # calculate call movement from nn output
         move_vector = self.calc_movement()
-        # print(f"nn output: {move_vector}")
-
         if abs(move_vector[0]) <= 1:
             x_vel = 0
         elif (move_vector[0] < -1):
@@ -104,8 +106,6 @@ class Cell:
             y_vel = -1
         else:
             y_vel = 1
-        # print(f"move vector: ({x_vel}, {y_vel})")
-        # x_vel, y_vel = 0, 1# self.calculate_vector()
 
         # make sure cell not moving outside canvas
         future_x = self.x + x_vel
@@ -128,13 +128,16 @@ class Cell:
         canvas.coords(self.vertical_eye, self.x, self.y-self.vision_distance, self.x, self.y+self.vision_distance)
         # move cell body
         canvas.move(self.circle, x_vel, y_vel)
+        # move cell stat text
+        canvas.move(self.stat_text, x_vel, y_vel)
+
+        # TODO redraw 
+        canvas.itemconfigure(self.stat_text, text=f"{round(self.fitness, 3)} {round(self.health, 3)}")
         
         return True
 
     def eat(self, food):
-        self.fitness += 1
-        # print(f"Cell consumed {self.fitness}")
-        
+        self.health += 1  
 
     def get_eye_coords(self, canvas, eye):
         if eye == "h":
@@ -150,6 +153,7 @@ class Cell:
         canvas.delete(self.circle)
         canvas.delete(self.horizontal_eye)
         canvas.delete(self.vertical_eye)
+        canvas.delete(self.stat_text)
 
     # TODO save cell neural network weights to file
     # TODO save cell death state, fitness, nn weights
