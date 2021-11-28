@@ -6,11 +6,11 @@ from random import randint
 from cell import Cell
 from food import Food
 
-frame_rate = 1
-screen_size = 800
-num_foods = 30
-num_cells = 10
-cell_vision_distance = 75
+frame_rate = 20
+screen_size = 250
+num_foods = 4
+num_cells = 2
+cell_vision_distance = 50
 timesteps = 0
 cell_fitness_reproduction_level = 2 # fitness must be this much for cell to clone itself
 
@@ -22,8 +22,15 @@ canvas = Canvas(window, width=screen_size, height=screen_size)
 canvas.pack()
 
 cells = []
+dead_cells = []
 foods = []
 time_steps = 0
+
+# create cells 
+if len(cells) < num_cells:
+    for i in range(0, num_cells-len(cells)):
+        x,y = int(screen_size/2), int(screen_size/2)
+        cells.append(Cell(canvas, x, y))
 
 def generate_cell_coordinate(r):
     '''
@@ -91,19 +98,19 @@ def move():
             foods[i].self_destruct(canvas)
             del foods[i]
     
-    # TODO create cell clones
-    for i in clone_indices:
-        # x, y = int(screen_size/2), int(screen_size/2)
-        x, y = generate_cell_coordinate(100)
-        parentCell = cells[i]
-        childCell = Cell(canvas, x, y, color=parentCell.color)
-        childCell.generation = parentCell.generation + 1
-        # initialize with parent 
-        childCell.set_nn_weights(parentCell.get_nn_weights())
-        # add slight mutation to child weights
-        childCell.mutate_weights(0.25)
-        childCell.clear_brain_memory() # delete recurrent memory from parent
-        cells.append(childCell)
+    # # TODO create cell clones
+    # for i in clone_indices:
+    #     # x, y = int(screen_size/2), int(screen_size/2)
+    #     x, y = generate_cell_coordinate(100)
+    #     parentCell = cells[i]
+    #     childCell = Cell(canvas, x, y, color=parentCell.color)
+    #     childCell.generation = parentCell.generation + 1
+    #     # initialize with parent 
+    #     childCell.set_nn_weights(parentCell.get_nn_weights())
+    #     # add slight mutation to child weights
+    #     childCell.mutate_weights(0.25)
+    #     childCell.clear_brain_memory() # delete recurrent memory from parent
+    #     cells.append(childCell)
 
     # calculate cell fov vector
     # [N, S, E, W]
@@ -148,14 +155,11 @@ def move():
         # print(f"cell fov: {cell.fov}")
 
     # move cells based on fov, only keep cells with fitness above 0 to continue
-    cells = [x for x in cells if x.advance(canvas, screen_size, screen_size)]
-    
-    # create cells if not at minimum cells
-    if len(cells) < num_cells:
-        for i in range(0, num_cells-len(cells)):
-            x, y = int(screen_size/2), int(screen_size/2)
-            cells.append(Cell(canvas, x, y, color=generate_hex_color()))
-    
+    for cell in cells:
+        if not cell.advance(canvas, screen_size, screen_size):
+            dead_cells.append(cell)
+            cells.remove(cell)
+
     # create foods if not at minimum foods
     if len(foods) < num_foods:
         for i in range(0, num_foods-len(foods)):
@@ -163,6 +167,7 @@ def move():
             foods.append(Food(canvas, x, y))
 
     time_steps += 1
+    print(f"cells: {cells}\ndead cells: {dead_cells}")
     window.after(frame_rate, move)
 
 print("Starting movement...")

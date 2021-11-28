@@ -5,7 +5,7 @@ import tensorflow as tf
 from tkinter import *
 
 class Cell:
-    def __init__(self, canvas, x, y, r=10, color="blue", species=0, vision_distance=75):
+    def __init__(self, canvas, x, y, r=10, color="blue", species=0, vision_distance=50):
         self.x = x
         self.y = y
         self.r = r
