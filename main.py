@@ -3,16 +3,29 @@ import numpy as np
 import time
 import math
 from random import randint
+import random
 from cell import Cell
 from food import Food
 
-frame_rate = 20
+frame_rate = 1
 screen_size = 250
 num_foods = 4
-num_cells = 2
+num_cells = 1
 cell_vision_distance = 50
 timesteps = 0
+generation = 0
 cell_fitness_reproduction_level = 2 # fitness must be this much for cell to clone itself
+
+# randomly init cell
+# let cell run until death
+# while true
+    # if best_cell is none, set best cell to this cell
+    # else if the cell fitness greater than best cell, set best cell to the cell
+cells = []
+best_cells = {}
+
+foods = []
+time_steps = 0
 
 window = Tk()
 window.title("Fish Tank")
@@ -21,16 +34,18 @@ window.resizable(False, False)
 canvas = Canvas(window, width=screen_size, height=screen_size)
 canvas.pack()
 
-cells = []
-dead_cells = []
-foods = []
-time_steps = 0
+# init foods
+foods.append(Food(canvas, 50, 50))
+foods.append(Food(canvas, screen_size-50, 50))
+foods.append(Food(canvas, 50, screen_size-50))
+foods.append(Food(canvas, screen_size-50, screen_size-50))
 
 # create cells 
 if len(cells) < num_cells:
     for i in range(0, num_cells-len(cells)):
         x,y = int(screen_size/2), int(screen_size/2)
-        cells.append(Cell(canvas, x, y))
+        new_cell = Cell(canvas, x, y, id=i)
+        cells.append(new_cell)
 
 def generate_cell_coordinate(r):
     '''
@@ -73,25 +88,69 @@ def calculate_cell_food_vision(cell_coords, food_coords):
     n = diff_y < 0
     w = diff_x < 0
 
+def evolve_species(eol_cell, best_cells):
+    ''' 
+    Take end of life cell and compare with best cell fitness
+    if > fitness, replace that cell with the new one
+    '''
+    if eol_cell.id not in best_cells:
+        best_cells[eol_cell.id] = eol_cell
+    elif best_cells[eol_cell.id].fitness < eol_cell.fitness:
+        best_cells[eol_cell.id] = eol_cell
+    return best_cells
+
 def move():
     global cells
     global foods
     global epoch
     global time_steps
     global frame_rate
+    global best_cells
+    global generation
 
-    if time_steps % 50 == 0:
-        print(f"Total cells: {len(cells)}")
-
+    # if no cells left, time to restart with a new generation
+    if len(cells) == 0:
+        generation += 1
+        print(f"GENERATION {generation}")
+        for species in best_cells.keys():
+            print(f"Species {species} highest fitness: {best_cells[species].fitness}")
+            # create new cell with same: id, color, neural netw
+            x, y = int(screen_size/2), int(screen_size/2)
+            parentCell = best_cells[species]
+            childCell = Cell(canvas, x, y, parent_cell=parentCell)
+            childCell.generation = parentCell.generation + 1
+            # initialize with parent network
+            childCell.set_nn_weights(parentCell.get_nn_weights())
+            # add slight mutation to child weights
+            mutation_stddev = random.uniform(0.01, 1.0)
+            childCell.mutate_weights(mutation_stddev)
+            print(f"current child mutation stddev: {mutation_stddev}")
+            # TODO make sure mutation does not modify parents weights because pass by reference
+            childCell.clear_brain_memory() # delete recurrent memory from parent
+            cells.append(childCell)
+        
+        # clear and regen foods
+        for food in foods:
+            food.self_destruct(canvas)
+            foods.remove(food)
+        # for i in range(len(foods)):
+        #     x,y = generate_cell_coordinate(40)
+        #     foods.append(Food(canvas, x, y))
+        foods.append(Food(canvas, 50, 50))
+        foods.append(Food(canvas, screen_size-50, 50))
+        foods.append(Food(canvas, 50, screen_size-50))
+        foods.append(Food(canvas, screen_size-50, screen_size-50))
+        
     # check for collisions between cells and food
     # TODO check cell fitness and spawn new cell if at 
-    clone_indices = [] # cells to clone because they ate a food
+    # clone_indices = [] # cells to clone because they ate a food
+
     for j, cell in enumerate(cells):
         purge_indexes = []
         for i in range(len(foods)): 
             if is_collision(cell, foods[i]):
                 cell.eat(foods[i])
-                clone_indices.append(j)
+                # clone_indices.append(j)
                 purge_indexes.append(i)    
         # delete consumed foods
         for i in sorted(purge_indexes, reverse=True):
@@ -157,17 +216,17 @@ def move():
     # move cells based on fov, only keep cells with fitness above 0 to continue
     for cell in cells:
         if not cell.advance(canvas, screen_size, screen_size):
-            dead_cells.append(cell)
+            print(f"Species {cell.id} died, fitness {cell.fitness}")
+            best_cells = evolve_species(cell, best_cells)
             cells.remove(cell)
 
-    # create foods if not at minimum foods
-    if len(foods) < num_foods:
-        for i in range(0, num_foods-len(foods)):
-            x,y = generate_cell_coordinate(10)
-            foods.append(Food(canvas, x, y))
+    # # create foods if not at minimum foods
+    # if len(foods) < num_foods:
+    #     for i in range(0, num_foods-len(foods)):
+    #         x,y = generate_cell_coordinate(40)
+    #         foods.append(Food(canvas, x, y))
 
     time_steps += 1
-    print(f"cells: {cells}\ndead cells: {dead_cells}")
     window.after(frame_rate, move)
 
 print("Starting movement...")
