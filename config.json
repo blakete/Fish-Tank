@@ -1,0 +1,11 @@
+{
+    "n_generations": 10000,
+    "screen_size": 250,
+    "frame_delta": 1,
+    "food_init_pattern": "corners",
+    "n_foods": 4,
+    "cell_init_pattern": "center",
+    "n_cells": 1,
+    "cell_vision_distance": 50,
+    "cell_inheritance": "random"
+}
